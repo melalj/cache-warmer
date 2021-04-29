@@ -6,7 +6,7 @@ WITH_COOKIE='OFF'
 COOKIE=''
 XML_LIST=()
 CURL_OPTS=''
-PROTECTOR='ON'
+PROTECTOR='OFF'
 VERBOSE='OFF'
 DEBUGURL='OFF'
 BLACKLIST='OFF'
@@ -71,27 +71,6 @@ exit 1
 }
 
 
-function echoY() {
-    echo -e "\033[38;5;148m${1}\033[39m"
-}
-function echoG() {
-    echo -e "\033[38;5;71m${1}\033[39m"
-}
-function echoR
-{
-    echo -e "\033[38;5;203m${1}\033[39m"
-}
-function echoB()
-{
-    echo -e "\033[1;3;94m${1}\033[0m"
-}
-function echoCYAN
-{
-    FLAG=$1
-    shift
-    echo -e "\033[1;36m$FLAG\033[0m$@"
-}
-
 function checkcurlver(){
     curl --help | grep 'Use HTTP 2' > /dev/null
     if [ ${?} = 0 ]; then
@@ -126,7 +105,7 @@ function cachecount(){
     elif [[ ${1} =~ ^[0-9]+$ ]]; then
         CT_URLS=$((CT_URLS+${1}))
     else
-        echoR "${1} no define to cachecount!"    
+        echo "${1} no define to cachecount!"    
     fi    
 }
 
@@ -135,7 +114,7 @@ prttwostr(){
 }
 
 function cachereport(){
-    echoY '=====================Crawl result:======================='
+    echo '=====================Crawl result:======================='
     prttwostr "Total URLs :" "${CT_URLS}" ''
     prttwostr "Added      :" "${CT_CACHEMISS}" ''
     prttwostr "Existing   :" "${CT_CACHEHIT}" ''
@@ -166,8 +145,8 @@ function protect_count(){
         if [ ${1} -eq 1 ]; then 
             DETECT_NUM=$((DETECT_NUM+1))
             if [ ${DETECT_NUM} -ge ${DETECT_LIMIT} ]; then
-                echoR "Hit ${DETECT_LIMIT} times 'page error' or 'no cache' in a row, abort !!"
-                echoR "To run script with no abort, please set PROTECTOR from 'ON' to 'OFF'."
+                echo "Hit ${DETECT_LIMIT} times 'page error' or 'no cache' in a row, abort !!"
+                echo "To run script with no abort, please set PROTECTOR from 'ON' to 'OFF'."
                 exit 1
             fi
         elif [ ${1} -eq 0 ]; then 
@@ -176,19 +155,19 @@ function protect_count(){
     fi
 }
 function addtoblacklist(){
-    echoB "Add ${1} to BlackList"
+    echo "Add ${1} to BlackList"
     echo "${1}" >> ${BLACKLSPATH}  
 }
 
 function debugurl_display(){
     echo ''
-    echoY "-------Debug curl start-------"
-    echoY "URL: ${2}"
-    echoY "AGENTDESKTOP: ${1}" 
-    echoY "COOKIE: ${3}"
+    echo "-------Debug curl start-------"
+    echo "URL: ${2}"
+    echo "AGENTDESKTOP: ${1}" 
+    echo "COOKIE: ${3}"
     echo "${4}"
-    echoY "-------Debug curl end-------"
-    echoY "Header Match: ${5}" 
+    echo "-------Debug curl end-------"
+    echo "Header Match: ${5}" 
 }
 
 function crawl_verbose(){
@@ -203,7 +182,7 @@ function crawlreq() {
     if [ "${DEBUGURL}" != "OFF" ] && [ "${BLACKLIST}" = 'ON' ]; then
         duplicateck ${2} ${BLACKLSPATH}
         if [ ${?} = 0 ]; then
-            echoY "${2} is in blacklist"
+            echo "${2} is in blacklist"
             exit 0
         fi    
     fi
@@ -214,7 +193,7 @@ function crawlreq() {
 
     CHECKMATCH=$(echo ${STATUS_CODE} | grep -Eio "$(echo ${ERR_LIST} | tr -d "'")")
     if [ "${CHECKMATCH}" == '' ]; then
-        CHECKMATCH=$(grep -Eio '(x-lsadc-cache: hit,litemage|x-lsadc-cache: hit|x-lsadc-cache: miss|x-qc-cache: hit|x-qc-cache: miss)'\
+        CHECKMATCH=$(grep -Eio '(x-lsadc-cache: hit,litemage|x-lsadc-cache: hit|x-lsadc-cache: miss|x-qc-cache: hit|x-qc-cache: miss|CF-Cache-Status: HIT|CF-Cache-Status: MISS|CF-Cache-Status: DYNAMIC)'\
         <<< ${CURLRESULT} | tr -d '\n')
     fi    
     if [ "${CHECKMATCH}" == '' ]; then
@@ -232,44 +211,44 @@ function crawlreq() {
         debugurl_display "${1}" "${2}" "${3}" "${CURLRESULT}" "${CHECKMATCH}"
     fi
     case ${CHECKMATCH} in
-        'CreatedSet-CookieSet-CookieSet-Cookie'|[Xx]-[Ll]ite[Ss]peed-[Cc]ache:\ miss|'X-LSADC-Cache: miss'|'cf-cache-status: MISS'|[Xx]-[Qq][Cc]-[Cc]ache:\ miss)
-            echoY 'Caching'
+        'CreatedSet-CookieSet-CookieSet-Cookie'|[Xx]-[Ll]ite[Ss]peed-[Cc]ache:\ miss|'X-LSADC-Cache: miss'|[Cc][Ff]-[Cc]ache-[Ss]tatus:\ MISS|[Xx]-[Qq][Cc]-[Cc]ache:\ miss)
+            echo 'Caching'
             cachecount 'miss'
             protect_count 0
         ;;
         'HTTP/1.1 201 Created')
             if [ $(echo ${CURLRESULT} | grep -i 'Cookie' | wc -l ) != 0 ]; then
                 if [[ ${DEBUGURL} != "OFF" ]]; then
-                    echoY "Set-Cookie found"
+                    echo "Set-Cookie found"
                 fi    
-                echoY 'Caching'
+                echo 'Caching'
                 cachecount 'miss'
             else
-                echoY 'Already cached'
+                echo 'Already cached'
                 cachecount 'hit'
             fi
             protect_count 0
         ;;
-        [Xx]-[Ll]ite[Ss]peed-Cache:\ hit|'x-lsadc-cache: hit'|'x-lsadc-cache: hit,litemage'|'cf-cache-status: HIT')
-            echoY 'Already cached'
+        [Xx]-[Ll]ite[Ss]peed-Cache:\ hit|'x-lsadc-cache: hit'|'x-lsadc-cache: hit,litemage'|'CF-Cache-Status: HIT'|[Cc][Ff]-[Cc]ache-[Ss]tatus:\ HIT)
+            echo 'Already cached'
             cachecount 'hit'
             protect_count 0
         ;;
         'HTTP/1.1 201 Createdlsc_private')
-            echoY 'Caching'
+            echo 'Caching'
             cachecount 'miss'
             protect_count 0
         ;;
         '400'|'401'|'403'|'404'|'407'|'500'|'502')
-            echoY "STATUS: ${CHECKMATCH}, can not cache"
+            echo "STATUS: ${CHECKMATCH}, can not cache"
             cachecount 'fail'
             protect_count 1
             if [ "${BLACKLIST}" = 'ON' ]; then
                 addtoblacklist ${2}
             fi
         ;;        
-        cf-cache-status:\ no-cache|'cf-cache-status: DYNAMIC')
-            echoY 'No Cache page'
+        CF-Cache-Status:\ no-cache|[Cc][Ff]-[Cc]ache-[Ss]tatus:\ DYNAMIC|'CF-Cache-Status: DYNAMIC')
+            echo 'No Cache page'
             cachecount 'no'
             protect_count 1
             ### To add 'no cache' page to black list, remove following lines' comment
@@ -278,7 +257,7 @@ function crawlreq() {
             #fi
         ;;
         *)
-            echoY 'No Need To Cache'
+            echo 'No Need To Cache'
             cachecount 'no'
         ;;
     esac
@@ -307,15 +286,15 @@ function validmap(){
     CURL_RETURN_CODE=0
     CURL_OUTPUT=$(${CURL_CMD} ${CURL_MAX_CONNECTION_TIMEOUT} ${SITEMAP} 2> /dev/null) || CURL_RETURN_CODE=$?
     if [ ${CURL_RETURN_CODE} -ne 0 ]; then
-        echoR "Curl connection failed with return code - ${CURL_RETURN_CODE}, exit"
+        echo "Curl connection failed with return code - ${CURL_RETURN_CODE}, exit"
         exit 1
     else
         HTTPCODE=$(echo "${CURL_OUTPUT}" | grep 'HTTP'| awk '{print $2}')
         if [ "${HTTPCODE}" != '200' ]; then
-            echoR "Curl operation/command failed due to server return code - ${HTTPCODE}, exit"
+            echo "Curl operation/command failed due to server return code - ${HTTPCODE}, exit"
             exit 1
         fi
-        echoG "SiteMap connection success \n"
+        echo "SiteMap connection success \n"
     fi
 }
 
@@ -380,23 +359,23 @@ function storexml() {
 
 function maincrawl() { 
     checkcrawler
-    echoY "There are ${URLCOUNT} urls in this sitemap"
+    echo "There are ${URLCOUNT} urls in this sitemap"
     if [ ${URLCOUNT} -gt 0 ]; then
         START_TIME="$(date -u +%s)"
-        echoY 'Starting to view with desktop agent...'
+        echo 'Starting to view with desktop agent...'
         if [ "${WITH_COOKIE}" = 'ON' ]; then
             getcookie
         fi
         cachecount ${URLCOUNT}    
         runLoop "${AGENTDESKTOP}" "${COOKIE}"
         if [ "${WITH_MOBILE}" = 'ON' ]; then
-            echoY 'Starting to view with mobile agent...'
+            echo 'Starting to view with mobile agent...'
             cachecount ${URLCOUNT}
             runLoop "${AGENTMOBILE}" "${COOKIE}"
         fi             
         END_TIME="$(date -u +%s)"
         ELAPSED="$((${END_TIME}-${START_TIME}))"
-        echoY "***Total of ${ELAPSED} seconds to finish process***"
+        echo "***Total of ${ELAPSED} seconds to finish process***"
 
     fi
 }
@@ -406,7 +385,7 @@ function main(){
         debugurl ${DEBUGURL}
     else
         for XMLURL in "${XML_LIST[@]}"; do
-            echoCYAN "Prepare to crawl ${XMLURL} XML file"
+            echo "Prepare to crawl ${XMLURL} XML file"
             if [ "${CRAWLQS}" = 'ON' ]; then
                 URLLIST=$(curl ${CURL_OPTS} --silent ${XMLURL} | sed -e 's/\/url/\n/g'| grep '<loc>' | \
                     sed -e 's/.*<loc>\(.*\)<\/loc>.*/\1/' | sed 's/<!\[CDATA\[//;s/]]>//' | \
