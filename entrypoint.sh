@@ -232,7 +232,7 @@ function crawlreq() {
         debugurl_display "${1}" "${2}" "${3}" "${CURLRESULT}" "${CHECKMATCH}"
     fi
     case ${CHECKMATCH} in
-        'CreatedSet-CookieSet-CookieSet-Cookie'|[Xx]-[Ll]ite[Ss]peed-[Cc]ache:\ miss|'X-LSADC-Cache: miss'|[Xx]-[Qq][Cc]-[Cc]ache:\ miss)
+        'CreatedSet-CookieSet-CookieSet-Cookie'|[Xx]-[Ll]ite[Ss]peed-[Cc]ache:\ miss|'X-LSADC-Cache: miss'|'cf-cache-status: MISS'|[Xx]-[Qq][Cc]-[Cc]ache:\ miss)
             echoY 'Caching'
             cachecount 'miss'
             protect_count 0
@@ -250,7 +250,7 @@ function crawlreq() {
             fi
             protect_count 0
         ;;
-        [Xx]-[Ll]ite[Ss]peed-Cache:\ hit|'x-lsadc-cache: hit'|'x-lsadc-cache: hit,litemage'|'x-qc-cache: hit')
+        [Xx]-[Ll]ite[Ss]peed-Cache:\ hit|'x-lsadc-cache: hit'|'x-lsadc-cache: hit,litemage'|'cf-cache-status: HIT')
             echoY 'Already cached'
             cachecount 'hit'
             protect_count 0
@@ -268,7 +268,7 @@ function crawlreq() {
                 addtoblacklist ${2}
             fi
         ;;        
-        [Xx]-[Ll]ite[sS]peed-Cache-Control:\ no-cache)
+        cf-cache-status:\ no-cache|'cf-cache-status: DYNAMIC')
             echoY 'No Cache page'
             cachecount 'no'
             protect_count 1
