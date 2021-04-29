@@ -7,7 +7,7 @@ bash ./entrypoint.sh -v "https://example.com/sitemap.xml" -r
 ```
 
 ```bash
-docker run -ti melalj/cache-warmer bash ./entrypoint.sh -v "https://refurbme-images.s3.amazonaws.com/warmup.xml" -r
+docker run -ti melalj/cache-warmer bash ./entrypoint.sh -v "https://example.com/sitemap.xml" -r
 
 ```
 
